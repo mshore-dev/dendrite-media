@@ -30,11 +30,6 @@ func (f *File) Path() string {
 
 func (f *File) Delete() error {
 
-	if *dryRun {
-		log.Printf("[dry] deleting file %s (%s)...\n", f.Path(), humanize.Bytes(uint64(f.Size)))
-		return nil
-	}
-
 	fullPath := f.Path()
 
 	log.Printf("[info] deleting file %s (%s)...\n", f.Path(), humanize.Bytes(uint64(f.Size)))
@@ -46,6 +41,17 @@ func (f *File) Delete() error {
 		log.Fatalf("failed to remove file path: %v\n", err)
 		return err
 	}
+
+	// exists, err := f.Exists()
+	// if err != nil {
+	// 	log.Fatalf("failed to confirm deletion: %v\n", err)
+	// 	return err
+	// }
+
+	// if exists {
+	// 	log.Printf("file %s was supposed to be gone. why is it here?\n", f.Path())
+	// 	return fmt.Errorf("file wasn't gone'd")
+	// }
 
 	return nil
 }
