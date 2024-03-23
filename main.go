@@ -1,41 +1,62 @@
 package main
 
 import (
+	"flag"
 	"log"
-	"os"
-	"time"
-
-	"github.com/dustin/go-humanize"
 )
 
 var (
-	mediaBasePath = "/var/lib/dendrite/media_store/"
+	dbUrl     = flag.String("db", "", "postgresql database connection url")
+	mediaPath = flag.String("media-path", "", "base path of the Dendrite media store")
+	dryRun    = flag.Bool("dry-run", false, "specificies wether or not to do a dry run")
 
-	dryRun = true
+	media MediaStore
 )
 
 func main() {
 
-	media := MediaStore{}
+	log.Println("dendrite-media command line tool")
 
-	err := media.Connect(os.Args[1])
-	if err != nil {
-		panic(err)
+	// parse global flags
+	flag.Parse()
+
+	if *dbUrl == "" || *mediaPath == "" {
+		log.Fatalf("you must specifcy the base media path and database connection string.")
 	}
 
-	files, err := media.GetAllMediaFromSource(os.Args[2], 0, 20)
-	if err != nil {
-		panic(err)
+	media = MediaStore{
+		MediaPath: *mediaPath,
 	}
 
-	for i := 0; i < len(files); i++ {
+	err := media.Connect(*dbUrl)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v\n", err)
+	}
 
-		log.Printf("%s (%s, %s)\n", files[i].ID, humanize.Bytes(uint64(files[i].Size)), humanize.Time(time.UnixMilli(files[i].Created)))
+	args := flag.Args()
 
-		// err = files[i].Delete()
-		// if err != nil {
-		// 	panic(err)
-		// }
+	if len(args) == 0 {
+		log.Fatalln("Please specify an action.")
+	}
+
+	cmd, args := args[0], args[1:]
+
+	switch cmd {
+	case "purge-local":
+		cmdPurgeLocal(args)
+	case "purge-remote":
+		cmdPurgeRemote(args)
+	case "purge-origin":
+		cmdPurgeOrigin(args)
+	case "purge-user":
+		cmdPurgeUser(args)
+	case "purge-mxid":
+		cmdPurgeMxid(args)
+	case "media-info":
+		cmdMediaInfo(args)
+	default:
+		log.Fatalf("Invalid subcommand %s\n", cmd)
+
 	}
 
 }

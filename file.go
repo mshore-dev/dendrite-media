@@ -10,10 +10,11 @@ import (
 
 type File struct {
 	ID      string
-	Size    int64
+	Size    uint64
 	Created int64
 	Hash    string
 	UserID  string
+	Origin  string
 
 	Store *MediaStore
 }
@@ -24,12 +25,12 @@ func (f *File) Path() string {
 		return ""
 	}
 
-	return path.Join(mediaBasePath, f.Hash[0:1], f.Hash[1:2], f.Hash[2:])
+	return path.Join(f.Store.MediaPath, f.Hash[0:1], f.Hash[1:2], f.Hash[2:])
 }
 
 func (f *File) Delete() error {
 
-	if dryRun {
+	if *dryRun {
 		log.Printf("[dry] deleting file %s (%s)...\n", f.Path(), humanize.Bytes(uint64(f.Size)))
 		return nil
 	}
