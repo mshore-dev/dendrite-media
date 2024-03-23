@@ -13,7 +13,58 @@ func cmdPurgeLocal(args []string) {
 }
 
 func cmdPurgeRemote(args []string) {
+	flag := flag.NewFlagSet("dendrite-media purge-local", flag.ExitOnError)
+	days := flag.Uint64("days", 30, "Purge remote media older than n days")
+	flag.Parse(args)
 
+	var count, storage uint64
+	var offset int
+	var dryRunTag string
+
+	if *dryRun {
+		dryRunTag = "(pretend) "
+	}
+
+	for {
+
+		files, err := media.GetRemoteMedia(offset, 50)
+		if err != nil {
+			log.Fatalf("failed to query for remote media: %v\n", err)
+		}
+
+		for i := 0; i < len(files); i++ {
+
+			// is the file old enough to be pruned?
+			if !olderThan(files[i].Created, *days) {
+				// log.Printf("file %s is not old enough to remove, breaking out", files[i].ID)
+				continue
+			}
+
+			storage += files[i].Size
+			count += 1
+
+			log.Printf("%sdeleting %s (%s)...\n", dryRunTag, files[i].ID, humanize.Bytes(files[i].Size))
+
+			if *dryRun {
+				// don't actually do anything
+				continue
+			}
+
+			err := files[i].Delete()
+			if err != nil {
+				log.Fatalf("failed to delete %s: %v\n", files[i].ID, err)
+			}
+		}
+
+		if len(files) < 50 {
+			break
+		}
+
+		offset += 50
+
+	}
+
+	log.Printf("> Pruned %d files totalling %s. %s\n", count, humanize.Bytes(storage), dryRunTag)
 }
 
 func cmdPurgeOrigin(args []string) {
@@ -24,6 +75,7 @@ func cmdPurgeOrigin(args []string) {
 
 	// var offset int
 	var count, storage uint64
+	var offset int
 	var dryRunTag string
 
 	if *dryRun {
@@ -35,7 +87,7 @@ func cmdPurgeOrigin(args []string) {
 		// TODO: Start from the newest and work backwards?
 		//		 It feels like doing back->front could cause problems.
 
-		files, err := media.GetMediaFromOrigin(*origin, 0, 50)
+		files, err := media.GetMediaFromOrigin(*origin, offset, 50)
 		if err != nil {
 			log.Fatalf("failed to query media from origin: %v\n", err)
 		}
@@ -61,6 +113,8 @@ func cmdPurgeOrigin(args []string) {
 			// no more files to process.
 			break
 		}
+
+		offset += 50
 	}
 
 	log.Printf("%sdeleted %d files totalling %s\n", dryRunTag, count, humanize.Bytes(storage))
