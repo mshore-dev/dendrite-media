@@ -133,6 +133,23 @@ func (ms *MediaStore) GetMediaFromOrigin(origin string, offset, limit int) ([]*F
 	return files, nil
 }
 
+func (ms *MediaStore) GetMediaByID(id string) (*File, error) {
+
+	row := ms.DB.QueryRow("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE media_id = $1", id)
+
+	f := File{
+		Store: ms,
+	}
+
+	err := row.Scan(&f.ID, &f.Size, &f.Created, &f.Hash, &f.UserID, &f.Origin)
+	if err != nil {
+		log.Printf("failed to scan row: %v\n", err)
+		return &File{}, nil
+	}
+
+	return &f, nil
+}
+
 func (ms *MediaStore) DeleteFile(id string) error {
 
 	// TODO: my homeserver doesn't have thumbnails enabled, but I understand this

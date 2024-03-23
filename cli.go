@@ -9,11 +9,11 @@ import (
 )
 
 func cmdPurgeLocal(args []string) {
-
+	log.Fatalln("purge-local is not implemented yet.")
 }
 
 func cmdPurgeRemote(args []string) {
-	flag := flag.NewFlagSet("dendrite-media purge-local", flag.ExitOnError)
+	flag := flag.NewFlagSet("dendrite-media purge-remote", flag.ExitOnError)
 	days := flag.Uint64("days", 30, "Purge remote media older than n days")
 	flag.Parse(args)
 
@@ -69,13 +69,15 @@ func cmdPurgeRemote(args []string) {
 
 func cmdPurgeOrigin(args []string) {
 
-	flag := flag.NewFlagSet("dendrite-media purge-local", flag.ExitOnError)
+	flag := flag.NewFlagSet("dendrite-media purge-origin", flag.ExitOnError)
 	origin := flag.String("origin", "", "Origin to purge all media from")
 	flag.Parse(args)
 
-	// var offset int
+	if *origin == "" {
+		log.Fatalf("you must specify a origin to purge media from.")
+	}
+
 	var count, storage uint64
-	// var offset int
 	var dryRunTag string
 
 	if *dryRun {
@@ -114,7 +116,6 @@ func cmdPurgeOrigin(args []string) {
 			break
 		}
 
-		// offset += 50
 	}
 
 	log.Printf("%sdeleted %d files totalling %s\n", dryRunTag, count, humanize.Bytes(storage))
@@ -123,9 +124,81 @@ func cmdPurgeOrigin(args []string) {
 
 func cmdPurgeUser(args []string) {
 
+	flag := flag.NewFlagSet("dendrite-media purge-user", flag.ExitOnError)
+	user := flag.String("user", "", "(Local) user to purge all media from")
+	flag.Parse(args)
+
+	if *user == "" {
+		log.Fatalf("you must specify a user to purge media from.")
+	}
+
+	var count, storage uint64
+	var dryRunTag string
+
+	if *dryRun {
+		dryRunTag = "(pretend) "
+	}
+
+	for {
+
+		files, err := media.GetMediaByUser(*user, 0, 50)
+		if err != nil {
+			log.Fatalf("failed to query media from origin: %v\n", err)
+		}
+
+		for i := 0; i < len(files); i++ {
+			storage += files[i].Size
+			count += 1
+
+			log.Printf("%sdeleting %s (%s)...\n", dryRunTag, files[i].ID, humanize.Bytes(files[i].Size))
+
+			if *dryRun {
+				// don't actually do anything
+				continue
+			}
+
+			err := files[i].Delete()
+			if err != nil {
+				log.Fatalf("failed to delete %s: %v\n", files[i].ID, err)
+			}
+		}
+
+		if len(files) < 50 {
+			// no more files to process.
+			break
+		}
+	}
+
+	log.Printf("%sdeleted %d files totalling %s\n", dryRunTag, count, humanize.Bytes(storage))
+
 }
 
 func cmdPurgeMxid(args []string) {
+
+	flag := flag.NewFlagSet("dendrite-media purge-mxid", flag.ExitOnError)
+	mxid := flag.String("mxid", "", "mxid of file to purge")
+	flag.Parse(args)
+
+	if *mxid == "" {
+		log.Fatalf("you must specify an mxid to purge.")
+	}
+
+	file, err := media.GetMediaByID(*mxid)
+	if err != nil {
+		log.Fatalf("failed to query media: %v\n", err)
+	}
+
+	if *dryRun {
+		log.Printf("> Pretended to remove media %s (%s)\n", file.ID, humanize.Bytes(file.Size))
+		return
+	}
+
+	err = file.Delete()
+	if err != nil {
+		log.Fatalf("failed to delete %s: %v\n", file.ID, err)
+	}
+
+	log.Printf("> Removed media %s (%s)\n", file.ID, humanize.Bytes(file.Size))
 
 }
 
