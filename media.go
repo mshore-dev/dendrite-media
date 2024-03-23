@@ -25,7 +25,7 @@ func (ms *MediaStore) GetMediaByUser(mxid string, offset, limit int) ([]*File, e
 
 	var files []*File
 
-	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id = $1 ORDER BY creation_ts DESC OFFSET $2 LIMIT $3", mxid, offset, limit)
+	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id = $1 ORDER BY creation_ts ASC OFFSET $2 LIMIT $3", mxid, offset, limit)
 	if err != nil {
 		log.Printf("failed to query for media from user %s: %v\n", mxid, err)
 		return []*File{}, nil
@@ -53,7 +53,7 @@ func (ms *MediaStore) GetLocalMedia(offset, limit int) ([]*File, error) {
 
 	var files []*File
 
-	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id != '' ORDER BY creation_ts DESC OFFSET $1 LIMIT $2", offset, limit)
+	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id != '' ORDER BY creation_ts ASC OFFSET $1 LIMIT $2", offset, limit)
 	if err != nil {
 		log.Printf("failed to query for local media: %v\n", err)
 		return []*File{}, nil
@@ -81,7 +81,7 @@ func (ms *MediaStore) GetRemoteMedia(offset, limit int) ([]*File, error) {
 
 	var files []*File
 
-	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id = '' ORDER BY creation_ts DESC OFFSET $1 LIMIT $2", offset, limit)
+	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE user_id = '' ORDER BY creation_ts ASC OFFSET $1 LIMIT $2", offset, limit)
 	if err != nil {
 		log.Printf("failed to query for remote media: %v\n", err)
 		return []*File{}, nil
@@ -109,7 +109,7 @@ func (ms *MediaStore) GetMediaFromOrigin(origin string, offset, limit int) ([]*F
 
 	var files []*File
 
-	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE media_origin = $1 ORDER BY creation_ts DESC OFFSET $2 LIMIT $3", origin, offset, limit)
+	rows, err := ms.DB.Query("SELECT media_id, file_size_bytes, creation_ts, base64hash, user_id, media_origin FROM mediaapi_media_repository WHERE media_origin = $1 ORDER BY creation_ts ASC OFFSET $2 LIMIT $3", origin, offset, limit)
 	if err != nil {
 		log.Printf("failed to query for media from origin %s: %v\n", origin, err)
 		return []*File{}, nil

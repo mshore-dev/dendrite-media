@@ -18,7 +18,7 @@ func cmdPurgeRemote(args []string) {
 	flag.Parse(args)
 
 	var count, storage uint64
-	var offset int
+	// var offset int
 	var dryRunTag string
 
 	if *dryRun {
@@ -27,7 +27,7 @@ func cmdPurgeRemote(args []string) {
 
 	for {
 
-		files, err := media.GetRemoteMedia(offset, 50)
+		files, err := media.GetRemoteMedia(0, 50)
 		if err != nil {
 			log.Fatalf("failed to query for remote media: %v\n", err)
 		}
@@ -60,7 +60,7 @@ func cmdPurgeRemote(args []string) {
 			break
 		}
 
-		offset += 50
+		// offset += 50
 
 	}
 
@@ -75,7 +75,7 @@ func cmdPurgeOrigin(args []string) {
 
 	// var offset int
 	var count, storage uint64
-	var offset int
+	// var offset int
 	var dryRunTag string
 
 	if *dryRun {
@@ -87,7 +87,7 @@ func cmdPurgeOrigin(args []string) {
 		// TODO: Start from the newest and work backwards?
 		//		 It feels like doing back->front could cause problems.
 
-		files, err := media.GetMediaFromOrigin(*origin, offset, 50)
+		files, err := media.GetMediaFromOrigin(*origin, 0, 50)
 		if err != nil {
 			log.Fatalf("failed to query media from origin: %v\n", err)
 		}
@@ -114,7 +114,7 @@ func cmdPurgeOrigin(args []string) {
 			break
 		}
 
-		offset += 50
+		// offset += 50
 	}
 
 	log.Printf("%sdeleted %d files totalling %s\n", dryRunTag, count, humanize.Bytes(storage))
